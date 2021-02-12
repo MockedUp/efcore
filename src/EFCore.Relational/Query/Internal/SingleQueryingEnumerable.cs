@@ -257,6 +257,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             private readonly bool _detailedErrorsEnabled;
             private readonly IConcurrencyDetector? _concurrencyDetector;
 
+            private IRelationalCommand? _relationalCommand;
             private RelationalDataReader? _dataReader;
             private SingleQueryResultCoordinator? _resultCoordinator;
 
@@ -346,9 +347,13 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             {
                 EntityFrameworkEventSource.Log.QueryExecuting();
 
-                var relationalCommand = _relationalCommandCache.GetRelationalCommand(_relationalQueryContext.ParameterValues);
+                var commandTemplate = _relationalCommandCache.GetRelationalCommand(_relationalQueryContext.ParameterValues);
+                var relationalConnection = _relationalQueryContext.Connection;
 
-                _dataReader = await relationalCommand.ExecuteReaderAsync(
+                _relationalCommand = relationalConnection.RentCommand();
+                _relationalCommand.PopulateFromTemplate(commandTemplate);
+
+                _dataReader = await _relationalCommand.ExecuteReaderAsync(
                     new RelationalCommandParameterObject(
                         _relationalQueryContext.Connection,
                         _relationalQueryContext.ParameterValues,
@@ -370,6 +375,8 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             {
                 if (_dataReader != null)
                 {
+                    _relationalQueryContext.Connection.ReturnCommand(_relationalCommand!);
+
                     var dataReader = _dataReader;
                     _dataReader = null;
 

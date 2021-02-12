@@ -207,7 +207,14 @@ namespace Microsoft.EntityFrameworkCore.TestUtilities
             }
 
             public DbCommand CreateDbCommand(RelationalCommandParameterObject parameterObject, Guid commandId, DbCommandMethod commandMethod)
-                => throw new NotImplementedException();
+                => throw new NotSupportedException();
+
+            /// <summary>
+            ///     Populates this command from the provided <paramref name="templateCommand"/>.
+            /// </summary>
+            /// <param name="templateCommand"> A template command from which the command text and parameters will be copied. </param>
+            public void PopulateFromTemplate(IRelationalCommand templateCommand)
+                => throw new NotSupportedException();
 
             private int? PreExecution(IRelationalConnection connection)
             {

@@ -25,17 +25,22 @@ namespace Microsoft.EntityFrameworkCore.Storage
     /// </summary>
     public class RelationalDataReader : IDisposable, IAsyncDisposable
     {
-        private readonly IRelationalConnection _connection;
-        private readonly DbCommand _command;
-        private readonly DbDataReader _reader;
-        private readonly Guid _commandId;
-        private readonly IDiagnosticsLogger<DbLoggerCategory.Database.Command>? _logger;
-        private readonly DateTimeOffset _startTime;
-        private readonly Stopwatch _stopwatch;
+        private IRelationalConnection _connection = default!;
+        private DbCommand _command = default!;
+        private DbDataReader _reader = default!;
+        private Guid _commandId;
+        private IDiagnosticsLogger<DbLoggerCategory.Database.Command>? _logger;
+        private DateTimeOffset _startTime;
+        private readonly Stopwatch _stopwatch = new();
 
         private int _readCount;
 
         private bool _disposed;
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="RelationalDataReader" /> class.
+        /// </summary>
+        public RelationalDataReader() {}
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="RelationalDataReader" /> class.
@@ -62,7 +67,7 @@ namespace Microsoft.EntityFrameworkCore.Storage
             _commandId = commandId;
             _logger = logger;
             _startTime = DateTimeOffset.UtcNow;
-            _stopwatch = Stopwatch.StartNew();
+            _stopwatch.Start();
         }
 
         /// <summary>
@@ -77,6 +82,34 @@ namespace Microsoft.EntityFrameworkCore.Storage
         public virtual DbCommand DbCommand
             => _command;
 
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="RelationalDataReader" /> class.
+        /// </summary>
+        /// <param name="connection"> The connection. </param>
+        /// <param name="command"> The command that was executed. </param>
+        /// <param name="reader"> The underlying reader for the result set. </param>
+        /// <param name="commandId"> A correlation ID that identifies the <see cref="DbCommand" /> instance being used. </param>
+        /// <param name="logger"> The diagnostic source. </param>
+        public virtual void Initialize(
+            [NotNull] IRelationalConnection connection,
+            [NotNull] DbCommand command,
+            [NotNull] DbDataReader reader,
+            Guid commandId,
+            [CanBeNull] IDiagnosticsLogger<DbLoggerCategory.Database.Command>? logger)
+        {
+            Check.NotNull(connection, nameof(connection));
+            Check.NotNull(command, nameof(command));
+            Check.NotNull(reader, nameof(reader));
+
+            _connection = connection;
+            _command = command;
+            _reader = reader;
+            _commandId = commandId;
+            _logger = logger;
+            _startTime = DateTimeOffset.UtcNow;
+            _disposed = false;
+            _stopwatch.Restart();
+        }
         /// <summary>
         ///     Calls <see cref="DbDataReader.Read()" /> on the underlying <see cref="System.Data.Common.DbDataReader" />.
         /// </summary>
@@ -133,7 +166,7 @@ namespace Microsoft.EntityFrameworkCore.Storage
                     {
                         _reader.Dispose();
                         _command.Parameters.Clear();
-                        _command.Dispose();
+                        // _command.Dispose();
                         _connection.Close();
                     }
                 }
@@ -173,7 +206,7 @@ namespace Microsoft.EntityFrameworkCore.Storage
                     {
                         await _reader.DisposeAsync().ConfigureAwait(false);
                         _command.Parameters.Clear();
-                        await _command.DisposeAsync().ConfigureAwait(false);
+                        // await _command.DisposeAsync().ConfigureAwait(false);
                         await _connection.CloseAsync().ConfigureAwait(false);
                     }
                 }

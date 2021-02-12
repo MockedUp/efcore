@@ -111,5 +111,11 @@ namespace Microsoft.EntityFrameworkCore.Storage
             RelationalCommandParameterObject parameterObject,
             Guid commandId,
             DbCommandMethod commandMethod);
+
+        /// <summary>
+        ///     Populates this command from the provided <paramref name="templateCommand"/>.
+        /// </summary>
+        /// <param name="templateCommand"> A template command from which the command text and parameters will be copied. </param>
+        void PopulateFromTemplate(IRelationalCommand templateCommand);
     }
 }
