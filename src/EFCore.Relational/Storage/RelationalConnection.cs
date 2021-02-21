@@ -746,7 +746,11 @@ namespace Microsoft.EntityFrameworkCore.Storage
         protected virtual Task OpenDbConnectionAsync(bool errorsExpected, CancellationToken cancellationToken)
             => DbConnection.OpenAsync(cancellationToken);
 
-        private void HandleAmbientTransactions()
+        /// <summary>
+        ///     Checks whether an ambient transaction exists when the connection is opened, and if so, enlists to it (or warns if the
+        ///     provider does not support ambient transactions).
+        /// </summary>
+        protected virtual void HandleAmbientTransactions()
         {
             var current = Transaction.Current;
 
